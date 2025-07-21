@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import win32api
 import winsound
+import sys
 
 from modules.available_drives import *
 from modules.drive_usage import *
@@ -14,10 +15,22 @@ def datetime_formatted(dt):
 #  return dt.strftime('%d/%m/%Y, %H:%M:%S')
 
 SECONDS_BETWEEN_CHECKS = 9
-
 DIALOG_TITLE = "LOW DRIVE SPACE!"
+DEFAULT_ALERT_THRESHOLD_FRACTION = 0.01
 
 if __name__ == '__main__':
+    # Parse optional command line argument for alert_threshold_fraction
+    if len(sys.argv) > 1:
+        try:
+            alert_threshold_fraction = float(sys.argv[1])
+        except ValueError:
+            print(f"Invalid alert_threshold_fraction: {sys.argv[1]}. Using default {DEFAULT_ALERT_THRESHOLD_FRACTION}.")
+            alert_threshold_fraction = DEFAULT_ALERT_THRESHOLD_FRACTION
+    else:
+        alert_threshold_fraction = DEFAULT_ALERT_THRESHOLD_FRACTION
+
+    drive_usage = DriveUsage(alert_threshold_fraction)
+
     while True:
         drives_infos = []
         console_messages = []
@@ -30,7 +43,7 @@ if __name__ == '__main__':
             drives_infos.append(DriveUsageInfo(path=drive))
         
         for info in drives_infos:
-            for message in drive_usage_messages(info):
+            for message in drive_usage.drive_usage_messages(info):
                 console_messages.append(message)
             console_messages.append("")
         
@@ -43,12 +56,12 @@ if __name__ == '__main__':
         dialog_messages = []
         for info in drives_infos:
             free_space = bytes_to_gb(info.free)
-            threshold = get_alert_threshold(info)
+            threshold = drive_usage.get_alert_threshold(info)
             if free_space < threshold:
                 any_drive_almost_full = True
                 dialog_messages.append(f"{info.path} drive is almost full")
                 dialog_messages.append("")
-                for message in drive_usage_messages(info):
+                for message in drive_usage.drive_usage_messages(info):
                     dialog_messages.append(message)
                 dialog_messages.append("")
 
