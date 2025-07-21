@@ -13,7 +13,6 @@ def datetime_formatted(dt):
   return dt.strftime('%H:%M:%S %d/%m/%Y')
 #  return dt.strftime('%d/%m/%Y, %H:%M:%S')
 
-GIGABYTES_THRESHOLD = 5
 SECONDS_BETWEEN_CHECKS = 9
 
 DIALOG_TITLE = "LOW DRIVE SPACE!"
@@ -43,7 +42,9 @@ if __name__ == '__main__':
         any_drive_almost_full = False
         dialog_messages = []
         for info in drives_infos:
-            if bytes_to_gb(info.free) < GIGABYTES_THRESHOLD:
+            free_space = bytes_to_gb(info.free)
+            threshold = get_alert_threshold(info)
+            if free_space < threshold:
                 any_drive_almost_full = True
                 dialog_messages.append(f"{info.path} drive is almost full")
                 dialog_messages.append("")
